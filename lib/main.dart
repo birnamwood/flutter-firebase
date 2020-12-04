@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 //JSON
 import 'dart:convert';
 //post
 import 'package:http/http.dart' as http;
 
-void main() {
+void main() async {
+    WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
@@ -26,6 +30,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
+
 class MyHomePage extends StatefulWidget {
   @override
   MyHomePageState createState() => MyHomePageState();
@@ -34,30 +39,37 @@ class MyHomePage extends StatefulWidget {
 
 class MyHomePageState extends State<MyHomePage> {
     final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
-    String name = "sign in";
-    IdTokenResult token;
+    final FirebaseMessaging firebaseMessaging = new FirebaseMessaging();
 
-  Future<AuthResult> signInAnon() async {
-    AuthResult result = await firebaseAuth.signInAnonymously();
-    print(result.user);
-    return result;
+    String name = "sign in";
+    String token;
+    String fcmToken;
+
+  Future<UserCredential> signInAnon() async {
+    UserCredential userCredential = await firebaseAuth.signInAnonymously();
+    print(userCredential);
+    return userCredential;
   }
 
   Future<String> send() async {
-    FirebaseUser user = await firebaseAuth.currentUser();
-    IdTokenResult tokenId = await user.getIdToken();
-    String token = tokenId.token;
+    User user = firebaseAuth.currentUser;
+    token = await user.getIdToken();
+      print(token);
 
     if (token != null) {
-      String url = "http://192.168.255.165:8000/api/v1/uid";
+      String url = "http://192.168.255.165:8000/api/v1/cards";
       Map<String, String> headers = {
         'content-type': 'application/json',
-        'Authrization': '$token',
+        'Authrization': 'Bearer $token',
       };
-      print(headers);
-      String body = json.encode({'token': "token"});
+      String body = json.encode({
+        'macAddress': "f7ds8g:g76",
+        'osVersion': "1.15.13",
+        'deviceName': "deviceName",
+        'fcmToken': fcmToken,
+        });
       http.Response res = await http.post(url, headers: headers, body: body);
-      print(res);
+      print(res.body);
     }
     return "OK";
   }
@@ -65,6 +77,20 @@ class MyHomePageState extends State<MyHomePage> {
   void signOut() {
     firebaseAuth.signOut();
     print('sign out');
+  }
+
+  void getFCM() {
+    firebaseMessaging.requestNotificationPermissions(
+      const IosNotificationSettings(
+        sound: true,
+        badge: true,
+        alert: true,
+      ),
+    );
+    firebaseMessaging.getToken().then((String fcm) {
+      fcmToken = fcm;
+      print(fcmToken);
+    });
   }
 
   @override 
@@ -82,7 +108,7 @@ class MyHomePageState extends State<MyHomePage> {
           child: Text(name),
           onPressed: () {
               name = "signed in";
-            signInAnon().then((AuthResult result) {
+            signInAnon().then((UserCredential result) {
             });
           },
         ),
@@ -117,6 +143,20 @@ class MyHomePageState extends State<MyHomePage> {
       )
     );
 
+    final fcmButton = Container(
+      padding: EdgeInsets.all(10.0),
+      child: FlatButton(
+        color: Colors.blue,
+        onPressed: () {
+          getFCM();
+        },
+        child: Text(
+          "GetFCMToken",
+          style: TextStyle(color: Colors.black),
+        )
+      )
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: Text("login"),
@@ -129,6 +169,7 @@ class MyHomePageState extends State<MyHomePage> {
             loginButton,
             logoutButton,
             sendButton,
+            fcmButton,
           ]
         )
       )
