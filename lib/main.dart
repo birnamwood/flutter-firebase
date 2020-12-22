@@ -57,17 +57,42 @@ class MyHomePageState extends State<MyHomePage> {
       print(token);
 
     if (token != null) {
-      String url = "http://192.168.255.165:8000/api/v1/cards";
+      String url = "http://192.168.255.165:8000/system/v1/message/post";
       Map<String, String> headers = {
         'content-type': 'application/json',
         'Authrization': 'Bearer $token',
       };
       String body = json.encode({
-        'macAddress': "f7ds8g:g76",
-        'osVersion': "1.15.13",
-        'deviceName': "deviceName",
-        'fcmToken': fcmToken,
+        'linkClinicId': "1",
+        'subject': "空診療所:次回予約のご案内",
+        'body': "モリタ ビバリー 様\n\n " +
+                "こんにちは、空診療所です。\n" +
+                "\n" +
+                "以下のようにご予約をお受けしておりましたが\n" +
+                "\n" +
+                "空 太郎の急病により、急遽診療をお休みさせていただきます。\n" +
+                "\n" +
+                "2020年12月31日12:00\n定期検診\n改行\n" +
+                "痛みがある場合や、出血が止まらないなどありましたら\n" +
+                "無理をなさらずにご連絡ください。\n" +
+                "\n" +
+                "\n" +
+                "当院は予約制となっておりますので、お時間にはゆとりをもってお越しください。",
+        'cardNo': ["1"],
         });
+      // String body = json.encode({
+      //   'macAddress': "f7ds8g:g76",
+      //   'osVersion': "1.15.13",
+      //   'deviceName': "deviceName",
+      //   'fcmToken': fcmToken,
+      //   });
+      // String body = json.encode({
+      //   'read': false,
+      //   'limit': 5,
+      //   'all': true,
+      //   'clinicId': 1,
+      //   'cardNo': "1"
+      //   });
       http.Response res = await http.post(url, headers: headers, body: body);
       print(res.body);
     }
